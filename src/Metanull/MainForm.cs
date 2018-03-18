@@ -28,20 +28,10 @@ namespace Metanull
             }
         }
 
-        private void singleFileSelectButton_Click(object sender, EventArgs e)
-        {
-            if (openFileDialog.ShowDialog() == DialogResult.OK)
-            {
-                singleFileRadio.Select();
-                singleFileTextBox.Text = openFileDialog.FileName;
-            }
-        }
-
         private void batchFolderBrowseButton_Click(object sender, EventArgs e)
         {
             if (sourceFolderDialog.ShowDialog() == DialogResult.OK)
             {
-                batchFolderRadio.Select();
                 batchFolderTextBox.Text = sourceFolderDialog.SelectedPath;
             }
         }
@@ -105,30 +95,15 @@ https://github.com/nikvoronin/Metanull
         private void nullItButton_Click(object sender, EventArgs e)
         {
             images.Clear();
-            if (batchFolderRadio.Checked)
-            {
-                SearchOption opts =
-                    recursiveCheckBox.Checked ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
-                string[] files = Directory.GetFiles(batchFolderTextBox.Text, "*.jp*g", opts);
-                images.AddRange(files);
-            }
-            else
-            {
-                images.Add(singleFileTextBox.Text);
-            }
+            SearchOption opts = SearchOption.AllDirectories;
+            string[] files = Directory.GetFiles(batchFolderTextBox.Text, "*.jp*g", opts);
+            images.AddRange(files);
 
-            stopButton.Enabled = true;
             nullItButton.Enabled = false;
-            singleFileRadio.Enabled = false;
-            singleFileTextBox.Enabled = false;
-            singleFileSelectButton.Enabled = false;
             batchFolderBrowseButton.Enabled = false;
-            batchFolderRadio.Enabled = false;
             batchFolderTextBox.Enabled = false;
             destFolderTextBox.Enabled = false;
             destFolderButton.Enabled = false;
-            recursiveCheckBox.Enabled = false;
-            sourceFolderTreeCheckBox.Enabled = false;
 
             progressBar.Value = 0;
             isRun = true;
@@ -163,19 +138,14 @@ https://github.com/nikvoronin/Metanull
                 string destFolder = destFolderDialog.SelectedPath;
 
                 // Scan source folder tree
-                if (sourceFolderTreeCheckBox.Checked &&
-                    recursiveCheckBox.Checked &&
-                    batchFolderRadio.Checked)
+                if (srcFolder != srcFileInfo.DirectoryName)
                 {
-                    if (srcFolder != srcFileInfo.DirectoryName)
-                    {
-                        string newSubFolder =
-                            srcFileInfo.DirectoryName.Substring(
-                                srcFolder.Length,
-                                srcFileInfo.DirectoryName.Length - srcFolder.Length);
-                        destFolder += newSubFolder;
-                        Directory.CreateDirectory(destFolder);
-                    }
+                    string newSubFolder =
+                        srcFileInfo.DirectoryName.Substring(
+                            srcFolder.Length,
+                            srcFileInfo.DirectoryName.Length - srcFolder.Length);
+                    destFolder += newSubFolder;
+                    Directory.CreateDirectory(destFolder);
                 }
 
                 BinaryWriter writer =
@@ -319,18 +289,11 @@ https://github.com/nikvoronin/Metanull
             waitTimer.Enabled = false;
             isRun = false;
 
-            stopButton.Enabled = false;
             nullItButton.Enabled = true;
-            singleFileRadio.Enabled = true;
-            singleFileTextBox.Enabled = true;
-            singleFileSelectButton.Enabled = true;
             batchFolderBrowseButton.Enabled = true;
-            batchFolderRadio.Enabled = true;
             batchFolderTextBox.Enabled = true;
             destFolderTextBox.Enabled = true;
             destFolderButton.Enabled = true;
-            recursiveCheckBox.Enabled = true;
-            sourceFolderTreeCheckBox.Enabled = true;
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -338,32 +301,10 @@ https://github.com/nikvoronin/Metanull
             isRun = false;
         }
 
-        private void batchFolderTextBox_TextChanged(object sender, EventArgs e)
-        {
-            if (batchFolderTextBox.Text.Trim().Length > 3)
-                batchFolderRadio.Checked = true;
-        }
-
-        private void singleFileTextBox_TextChanged(object sender, EventArgs e)
-        {
-            if (singleFileTextBox.Text.Trim().Length > 3)
-                singleFileRadio.Checked = true;
-        }
-
         private void waitTimer_Tick(object sender, EventArgs e)
         {
             if (!isRun)
                 stopButton_Click(this, e);
-        }
-
-        private void singleFileRadio_CheckedChanged(object sender, EventArgs e)
-        {
-            sourceFolderTreeCheckBox.Enabled = !singleFileRadio.Checked && recursiveCheckBox.Checked;
-        }
-
-        private void recursiveCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-            sourceFolderTreeCheckBox.Enabled = !singleFileRadio.Checked && recursiveCheckBox.Checked;
         }
     }
 }
