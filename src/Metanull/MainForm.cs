@@ -4,11 +4,14 @@ using System.Windows.Forms;
 using System.Reflection;
 using System.Threading;
 using System.IO;
+using System.Drawing;
 
 namespace Metanull
 {
     public partial class MainForm : Form
     {
+        private const int exifOrientationID = 0x112; //274
+
         string log = string.Empty;
         bool isRun = false;
         List<string> images = new List<string>();
@@ -19,12 +22,46 @@ namespace Metanull
             //recreate the folder tree
         }
 
+        private static RotateFlipType ExifRotate(Image img)
+        {
+            try
+            {
+                var prop = img.GetPropertyItem(exifOrientationID);
+                int val = BitConverter.ToUInt16(prop.Value, 0);
+                var rot = RotateFlipType.RotateNoneFlipNone;
+
+                if (val == 3 || val == 4)
+                    rot = RotateFlipType.Rotate180FlipNone;
+                else if (val == 5 || val == 6)
+                    rot = RotateFlipType.Rotate90FlipNone;
+                else if (val == 7 || val == 8)
+                    rot = RotateFlipType.Rotate270FlipNone;
+
+                if (val == 2 || val == 4 || val == 5 || val == 7)
+                    rot |= RotateFlipType.RotateNoneFlipX;
+
+                return rot;
+            }
+            catch (Exception)
+            {
+                return RotateFlipType.RotateNoneFlipNone;
+            }
+        }
+
         private static void FlipImage(string input, string output)
         {
-            using (System.Drawing.Image img = System.Drawing.Image.FromFile(input))
+            using (Image sourceImg = Image.FromFile(input))
             {
-                img.RotateFlip(System.Drawing.RotateFlipType.RotateNoneFlipXY);
-                img.Save(output, System.Drawing.Imaging.ImageFormat.Jpeg);
+                var rot = ExifRotate(sourceImg);
+
+                using (Image destImg = Image.FromFile(output))
+                {
+                    if (rot != RotateFlipType.RotateNoneFlipNone)
+                    {
+                        destImg.RotateFlip(rot);
+                        destImg.Save(output, System.Drawing.Imaging.ImageFormat.Jpeg);
+                    }
+                }
             }
         }
 
@@ -171,7 +208,7 @@ https://github.com/nikvoronin/Metanull
                 writer.Flush();
                 writer.Close();
 
-                FlipImage(destFolder + comma + srcFileInfo.Name, destFolder + comma + srcFileInfo.Name);
+                FlipImage(filename, destFolder + comma + srcFileInfo.Name);
 
                 alreadyDo++;
                 UpdateProgress(alreadyDo * 100 / images.Count);
