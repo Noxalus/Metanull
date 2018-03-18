@@ -19,6 +19,15 @@ namespace Metanull
             //recreate the folder tree
         }
 
+        private static void FlipImage(string input, string output)
+        {
+            using (System.Drawing.Image img = System.Drawing.Image.FromFile(input))
+            {
+                img.RotateFlip(System.Drawing.RotateFlipType.RotateNoneFlipXY);
+                img.Save(output, System.Drawing.Imaging.ImageFormat.Jpeg);
+            }
+        }
+
         private void singleFileSelectButton_Click(object sender, EventArgs e)
         {
             if (openFileDialog.ShowDialog() == DialogResult.OK)
@@ -58,13 +67,13 @@ namespace Metanull
                 if (logTextBox == null) return;
                 logTextBox.BeginInvoke(
                     new MethodInvoker(
-                        delegate { 
+                        delegate {
                             logTextBox.Text = log;
                             logTextBox.SelectionStart = logTextBox.Text.Length;
                             logTextBox.ScrollToCaret();
                         }));
             }
-            catch { } 
+            catch { }
         }
 
         private void UpdateProgress(int progress)
@@ -81,7 +90,7 @@ namespace Metanull
             }
             catch { }
         }
-        
+
         private void MainForm_Load(object sender, EventArgs e)
         {
             this.Text = "Metanull 1.1";
@@ -148,11 +157,11 @@ https://github.com/nikvoronin/Metanull
                     new BinaryReader(
                         File.Open(filename, FileMode.Open));
                 LogLn(filename);
-                
+
                 FileInfo srcFileInfo = new FileInfo(filename);
                 string comma = filename.Contains("/") ? "/" : "\\";
                 string destFolder = destFolderDialog.SelectedPath;
-                
+
                 // Scan source folder tree
                 if (sourceFolderTreeCheckBox.Checked &&
                     recursiveCheckBox.Checked &&
@@ -172,8 +181,8 @@ https://github.com/nikvoronin/Metanull
                 BinaryWriter writer =
                     new BinaryWriter(
                         File.Open(destFolder + comma + srcFileInfo.Name, FileMode.Create));
-                
-                int removedSects = TruncateAll(reader, writer);                
+
+                int removedSects = TruncateAll(reader, writer);
                 LogLn(
                     "Done: " +
                     reader.BaseStream.Length + " bytes --> " +
@@ -191,6 +200,8 @@ https://github.com/nikvoronin/Metanull
                 reader.Close();
                 writer.Flush();
                 writer.Close();
+
+                FlipImage(destFolder + comma + srcFileInfo.Name, destFolder + comma + srcFileInfo.Name);
 
                 alreadyDo++;
                 UpdateProgress(alreadyDo * 100 / images.Count);
